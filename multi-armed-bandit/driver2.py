@@ -72,7 +72,7 @@ def playout(state, value):
 	_, pulls = state
 	value += machines[state[0]].pull()
 	for i in range(MAX_PULLS - pulls - 1):
-		value += random.choice(machines).pull()
+		value += machines[np.random.randint(0, SLOTS)].pull()
 	return value
 
 class SlotMachine:
@@ -88,14 +88,14 @@ parser = argparse.ArgumentParser(description='MCTS')
 parser.add_argument('--cycles', action="store", required=False, default = 10000, type=int)
 parser.add_argument('--pulls', action="store", required=False, default = 20, type=int)
 parser.add_argument('--slots', action="store", required=False, default = 10, type=int)
-parser.add_argument('--win', action="store", required=False, default = 0.8, type=int)
+parser.add_argument('--win', action="store", required=False, default = 0.5, type=int)
 
 if __name__=="__main__":
 	args=parser.parse_args()
 	CYCLES = args.cycles
 	MAX_PULLS = args.pulls
 	SLOTS = args.slots
-	THRESHOLD = MAX_PULLS * args.win
+	THRESHOLD = int(MAX_PULLS * args.win)
 
 	machines = []
 	# populate the machines array with slots
@@ -104,6 +104,7 @@ if __name__=="__main__":
 	# machines = [SlotMachine(0.5) for _ in range(2)]
 	# machines += [SlotMachine(1) for _ in range(1)] # sure win
 	# machines += [SlotMachine(0.1) for _ in range(2)]
+	# SLOTS = 5
 
 	probs = [x.prob for x in machines]
 	print(list(enumerate(probs)))
@@ -149,13 +150,15 @@ if __name__=="__main__":
 	#Random Results
 	tests = 1000
 	random = 0
-	mtcs = 0
+	mcts = 0
 
 	for _ in range(0, tests):
 		randresult = 0;
 		for _ in range (0, MAX_PULLS):
-			randresult += random.choice(machines).pull()
-		random += randresult
+			randresult += machines[np.random.randint(0, SLOTS)].pull()
+		if (randresult > THRESHOLD):
+			random += 1
+
 	random = random / tests
 	print("Random Result: " + str(random))
 
@@ -169,7 +172,8 @@ if __name__=="__main__":
 			toadd = Node.value(current)
 			# toadd = current.value()
 		else:
-			toadd = playout((random.choice(range(len(machines))), current.pulls() + 1), current.value())
+			toadd = playout((np.random.randint(0, SLOTS), current.numpulls() + 1), Node.value(current))
+		# print(toadd)
 		if toadd > THRESHOLD:
 			mcts += 1
 	mcts = mcts / tests
